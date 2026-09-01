@@ -1,4 +1,4 @@
-# AlphaFund — AI Investment Research System
+# InsightEdge Research — AI Investment Research System
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" />
@@ -15,7 +15,7 @@
 <br/>
 
 <p align="center">
-  <img src="screenshots/1.png" alt="AlphaFund — Home" width="860" />
+  <img src="screenshots/1.png" alt="InsightEdge Research — Home" width="860" />
 </p>
 
 ---
@@ -37,7 +37,7 @@
 
 ## Overview
 
-AlphaFund is a **multi-agent AI investment research system** built on [LangGraph](https://github.com/langchain-ai/langgraph). It orchestrates 8 specialised agents to produce structured investment recommendations — BUY, HOLD, or SELL — backed by fundamental analysis, technical indicators, news sentiment, a structured bull-vs-bear debate, and CVaR risk assessment.
+InsightEdge Research is a **multi-agent AI investment research system** built on [LangGraph](https://github.com/langchain-ai/langgraph). It orchestrates 8 specialised agents to produce structured investment recommendations — BUY, HOLD, or SELL — backed by fundamental analysis, technical indicators, news sentiment, a structured bull-vs-bear debate, and CVaR risk assessment.
 
 The architecture directly implements findings from three financial AI research papers: **FINCON** (hierarchical agents, 3-layer memory, Conceptual Verbal Reinforcement), a **multi-agent benchmarking** study (hierarchical beats peer-to-peer; Pydantic validation gates prevent cascading failures), and **D3** (structured debate with deliberation reduces variance in financial judgements). Everything runs on free-tier APIs — no paid LLM subscription required.
 
@@ -159,8 +159,8 @@ Full architecture notes and state schema are in `docs/PLAN.md` (internal, not in
 ### Installation
 
 ```bash
-git clone https://github.com/your-username/AI_Hedge_Fund.git
-cd AI_Hedge_Fund
+git clone https://github.com/your-username/InsightEdge_Research.git
+cd InsightEdge_Research
 
 python -m venv .venv
 source .venv/bin/activate        # macOS / Linux
@@ -205,7 +205,7 @@ Open [http://localhost:3000](http://localhost:3000)
 ## Project Structure
 
 ```
-AI_Hedge_Fund/
+InsightEdge_Research/
 ├── src/
 │   ├── agents/
 │   │   ├── supervisor.py          # Memory injection — no LLM

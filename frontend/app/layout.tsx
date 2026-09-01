@@ -7,7 +7,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AlphaFund — AI Investment Research",
+  title: "InsightEdge Research — AI Investment Research",
   description: "Multi-agent LLM investment analysis powered by LangGraph",
 };
 
@@ -33,7 +33,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 α
               </span>
               <span className="text-sm font-bold tracking-wider text-foreground/90 group-hover:text-foreground transition-colors">
-                ALPHAFUND
+                INSIGHTEDGE RESEARCH
               </span>
               <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border border-border/50 text-muted-foreground/60 tracking-widest">
                 BETA
@@ -68,7 +68,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               ⚠ NOT FINANCIAL ADVICE · Research tool only · Always consult a licensed financial professional before investing
             </p>
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-muted-foreground/35 tracking-wider">© ALPHAFUND</span>
+              <span className="text-[10px] text-muted-foreground/35 tracking-wider">© INSIGHTEDGE RESEARCH</span>
               <span className="text-[10px] text-muted-foreground/30 font-mono">LangGraph · Llama 3.3 70B · Groq</span>
             </div>
           </div>
