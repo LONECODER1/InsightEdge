@@ -17,13 +17,32 @@ from api.routes.search import router as search_router
 
 app = FastAPI(title="AI Hedge Fund API", version="1.0.0")
 
-# Robust CORS configuration:
-# Using allow_origin_regex matches any http/https origin and dynamically reflects it,
-# which allows credentials and avoids browser wildcard (*) rejection.
+# Bulletproof CORS: Catch-all middleware guarantees CORS headers on all requests,
+# instant responses to preflight OPTIONS, and CORS headers even on 500 exceptions.
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    if request.method == "OPTIONS":
+        from fastapi.responses import Response
+        response = Response(status_code=200)
+    else:
+        try:
+            response = await call_next(request)
+        except Exception as e:
+            from fastapi.responses import JSONResponse
+            response = JSONResponse({"error": str(e)}, status_code=500)
+
+    origin = request.headers.get("origin") or "*"
+    response.headers["Access-Control-Allow-Origin"] = origin
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Expose-Headers"] = "*"
+    return response
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_origin_regex=r"https?://.*",
+    allow_origin_regex=r".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

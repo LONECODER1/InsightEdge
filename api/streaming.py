@@ -77,12 +77,6 @@ def start_analysis(ticker: str, query: str = "") -> tuple[str, bool]:
         if sid in _sessions and _sessions[sid]["status"] == "done":
             return sid, True
 
-    import sys
-    import os
-    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-    from src.graph.workflow import get_graph
-
     session_id = str(uuid.uuid4())
     _ticker_cache[ticker] = {"session_id": session_id, "ts": time.time()}
     _sessions[session_id] = {"status": "running", "ticker": ticker, "events": [], "final": None}
@@ -105,6 +99,7 @@ def start_analysis(ticker: str, query: str = "") -> tuple[str, bool]:
     }
 
     def run():
+        from src.graph.workflow import get_graph
         graph = get_graph()
         config = {"configurable": {"thread_id": session_id}}
         final_state = {}

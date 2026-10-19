@@ -11,7 +11,7 @@ class AnalyzeRequest(BaseModel):
 
 
 @router.post("/analyze/{ticker}")
-async def start(ticker: str, body: AnalyzeRequest = AnalyzeRequest()):
+def start(ticker: str, body: AnalyzeRequest = AnalyzeRequest()):
     session_id, from_cache = start_analysis(ticker.upper(), body.query)
     return {"session_id": session_id, "ticker": ticker.upper(), "cached": from_cache}
 
