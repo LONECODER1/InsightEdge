@@ -1,4 +1,5 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const rawBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api").trim().replace(/\/+$/, "");
+const BASE = rawBase.endsWith("/api") ? rawBase : `${rawBase}/api`;
 
 export type AgentEvent = {
   node: string;
