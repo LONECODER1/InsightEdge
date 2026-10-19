@@ -17,9 +17,15 @@ from api.routes.search import router as search_router
 
 app = FastAPI(title="AI Hedge Fund API", version="1.0.0")
 
+cors_origins_raw = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+if cors_origins_raw.strip() == "*":
+    cors_origins = ["*"]
+else:
+    cors_origins = [o.strip() for o in cors_origins_raw.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

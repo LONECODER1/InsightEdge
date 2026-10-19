@@ -7,11 +7,11 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 
-# Quality-critical nodes
-PRIMARY_MODEL = os.getenv("PRIMARY_MODEL", "qwen/qwen3.8-27b")
+# Quality-critical nodes (synthesis, risk, judge)
+PRIMARY_MODEL = os.getenv("PRIMARY_MODEL", "openai/gpt-oss-120b")
 
-# Volume nodes (research + debate)
-VOLUME_MODEL = os.getenv("VOLUME_MODEL", "qwen/qwen3.8-27b")
+# Volume nodes (research + debate + reflection)
+VOLUME_MODEL = os.getenv("VOLUME_MODEL", "openai/gpt-oss-20b")
 
 # Temperature settings
 ANALYST_TEMPERATURE = 0.1    # research agents need consistency

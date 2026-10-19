@@ -30,14 +30,11 @@ _ROLE_TEMPS: dict[str, float] = {
     "reflection": ANALYST_TEMPERATURE,
 }
 
-_model_logs: dict[str, deque] = {}
+_primary_log: deque = deque()   # 70B: ~6K tokens/min
+_volume_log:  deque = deque()   # 8B:  ~20K tokens/min
 
 
-def _rate_guard(model_name: str, limit: int = 7000, estimated_tokens: int = 1500) -> None:
-    if model_name not in _model_logs:
-        _model_logs[model_name] = deque()
-    log = _model_logs[model_name]
-
+def _rate_guard(log: deque, limit: int, estimated_tokens: int = 2000) -> None:
     now = time.time()
     while log and now - log[0][0] > 60:
         log.popleft()
@@ -45,7 +42,7 @@ def _rate_guard(model_name: str, limit: int = 7000, estimated_tokens: int = 1500
     if window_tokens + estimated_tokens > limit:
         wait = 61.0 - (now - log[0][0])
         if wait > 0:
-            print(f"[rate-guard] {window_tokens} tokens in window for {model_name} — waiting {wait:.1f}s")
+            print(f"[rate-guard] {window_tokens} tokens in window — waiting {wait:.1f}s")
             time.sleep(wait)
     log.append((time.time(), estimated_tokens))
 
@@ -54,21 +51,24 @@ def get_llm(role: str = "analyst") -> BaseChatModel:
     if not GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY not set in .env")
 
-    temperature = _ROLE_TEMPS.get(role, ANALYST_TEMPERATURE)
-    max_tok = MAX_TOKENS.get(role, 800)
+    temperature  = _ROLE_TEMPS.get(role, ANALYST_TEMPERATURE)
+    max_tok      = MAX_TOKENS.get(role, 800)
 
     from langchain_groq import ChatGroq
 
-    selected_model = VOLUME_MODEL if role in _VOLUME_ROLES else PRIMARY_MODEL
-    
-    # 7000 token limit to safely stay below 8000 TPM free tier caps
-    _rate_guard(selected_model, limit=7000, estimated_tokens=max_tok + 500)
+    if role in _VOLUME_ROLES:
+        _rate_guard(_volume_log, limit=18000)
+        return ChatGroq(
+            model=VOLUME_MODEL,
+            temperature=temperature,
+            max_tokens=max_tok,
+            api_key=GROQ_API_KEY,
+        )
 
+    _rate_guard(_primary_log, limit=5200)
     return ChatGroq(
-        model=selected_model,
+        model=PRIMARY_MODEL,
         temperature=temperature,
         max_tokens=max_tok,
-        max_retries=5,
         api_key=GROQ_API_KEY,
     )
-
