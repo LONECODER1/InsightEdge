@@ -30,19 +30,19 @@ _ROLE_TEMPS: dict[str, float] = {
     "reflection": ANALYST_TEMPERATURE,
 }
 
-_primary_log: deque = deque()   # 70B: ~6K tokens/min
-_volume_log:  deque = deque()   # 8B:  ~20K tokens/min
+_primary_log: deque = deque()   # Primary pool
+_volume_log:  deque = deque()   # Volume pool
 
 
-def _rate_guard(log: deque, limit: int, estimated_tokens: int = 2000) -> None:
+def _rate_guard(log: deque, limit: int = 25000, estimated_tokens: int = 800) -> None:
+    """Lightweight rate guard that tracks TPM without forcing multi-minute sleeps."""
     now = time.time()
     while log and now - log[0][0] > 60:
         log.popleft()
     window_tokens = sum(t for _, t in log)
     if window_tokens + estimated_tokens > limit:
-        wait = 61.0 - (now - log[0][0])
+        wait = min(61.0 - (now - log[0][0]), 2.0)  # Cap wait to max 2s instead of 60s
         if wait > 0:
-            print(f"[rate-guard] {window_tokens} tokens in window — waiting {wait:.1f}s")
             time.sleep(wait)
     log.append((time.time(), estimated_tokens))
 
@@ -57,7 +57,7 @@ def get_llm(role: str = "analyst") -> BaseChatModel:
     from langchain_groq import ChatGroq
 
     if role in _VOLUME_ROLES:
-        _rate_guard(_volume_log, limit=18000)
+        _rate_guard(_volume_log, limit=30000, estimated_tokens=max_tok)
         return ChatGroq(
             model=VOLUME_MODEL,
             temperature=temperature,
@@ -65,7 +65,7 @@ def get_llm(role: str = "analyst") -> BaseChatModel:
             api_key=GROQ_API_KEY,
         )
 
-    _rate_guard(_primary_log, limit=5200)
+    _rate_guard(_primary_log, limit=25000, estimated_tokens=max_tok)
     return ChatGroq(
         model=PRIMARY_MODEL,
         temperature=temperature,

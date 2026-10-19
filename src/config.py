@@ -36,12 +36,12 @@ CVAR_WINDOW_DAYS = 252
 
 # --- Token limits per role (controls LLM output length, saves tokens) ---
 MAX_TOKENS: dict[str, int] = {
-    "analyst":   800,   # research agents — structured JSON output
-    "debate":   1200,   # combined bull+bear+winner — needs more room
-    "synthesis": 900,   # merges 3 research outputs
-    "risk":      600,   # risk flags JSON
-    "judge":     700,   # final decision JSON
-    "reflection": 400,  # belief extraction
+    "analyst":   1000,  # research agents — structured JSON output
+    "debate":    1200,  # combined bull+bear+winner — needs more room
+    "synthesis": 1000,  # merges 3 research outputs
+    "risk":      1200,  # risk flags JSON — increased to prevent truncated output
+    "judge":     1000,  # final decision JSON
+    "reflection": 600,  # belief extraction
 }
 
 # --- CVRF Config ---

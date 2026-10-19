@@ -5,10 +5,14 @@ Usage:
     python main.py --ticker AAPL --query "Is AAPL a good buy right now?"
     python main.py --ticker TSLA --verbose
 """
+import sys
 import argparse
 import json
 import uuid
 from pprint import pprint
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 from src.graph.workflow import get_graph
 

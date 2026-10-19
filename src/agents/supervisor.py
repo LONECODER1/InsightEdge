@@ -30,7 +30,7 @@ def supervisor_node(state: HedgeFundState) -> dict:
         "past_decisions": past_decisions,
         "investment_beliefs": belief_texts,
         "agent_errors": [],
-        # Reset debate state on re-entry after risk_flag
+        "risk_loops": state.get("risk_loops", 0) + (1 if state.get("risk_flag") else 0),
         "debate_rounds_done": state.get("debate_rounds_done", 0),
         "risk_flag": False,
     }

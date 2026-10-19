@@ -33,27 +33,52 @@ def get_cik(ticker: str) -> str | None:
     return None
 
 
+_sec_cache: dict[str, dict] = {}
+
+
 def get_latest_10k_summary(ticker: str) -> dict:
     """
     Fetches the latest 10-K filing for `ticker` and extracts key sections:
     - Business description
     - Risk factors (first 2000 chars)
     - MD&A highlights
-    Returns structured dict.
+    Includes in-memory and disk caching for instant subsequent lookups.
     """
-    headers = {"User-Agent": SEC_USER_AGENT, "Accept-Encoding": "gzip, deflate"}
-    cik = get_cik(ticker)
-    if not cik:
-        return {"ticker": ticker, "error": "CIK not found for ticker"}
+    ticker_clean = ticker.upper().strip()
 
-    # Get filing list
+    # 1. Check in-memory cache
+    if ticker_clean in _sec_cache:
+        return _sec_cache[ticker_clean]
+
+    # 2. Check disk cache
+    cache_dir = Path(SEC_FILINGS_DIR)
+    cache_file = cache_dir / f"{ticker_clean}_10k.json"
+    if cache_file.exists():
+        try:
+            with open(cache_file, "r", encoding="utf-8") as f:
+                cached_data = json.load(f)
+                _sec_cache[ticker_clean] = cached_data
+                return cached_data
+        except Exception:
+            pass
+
+    headers = {"User-Agent": SEC_USER_AGENT, "Accept-Encoding": "gzip, deflate"}
+    cik = get_cik(ticker_clean)
+    if not cik:
+        fallback = {"ticker": ticker_clean, "note": "CIK not found; using financial statements"}
+        _sec_cache[ticker_clean] = fallback
+        return fallback
+
+    # Get filing list with fast timeout
     submissions_url = f"https://data.sec.gov/submissions/CIK{cik}.json"
     try:
-        resp = requests.get(submissions_url, headers=headers, timeout=15)
+        resp = requests.get(submissions_url, headers=headers, timeout=6)
         resp.raise_for_status()
         data = resp.json()
     except Exception as e:
-        return {"ticker": ticker, "error": f"Failed to fetch submissions: {e}"}
+        fallback = {"ticker": ticker_clean, "note": f"Filing metadata unavailable: {e}"}
+        _sec_cache[ticker_clean] = fallback
+        return fallback
 
     filings = data.get("filings", {}).get("recent", {})
     forms = filings.get("form", [])
@@ -63,7 +88,9 @@ def get_latest_10k_summary(ticker: str) -> dict:
     # Find most recent 10-K
     ten_k_idx = next((i for i, f in enumerate(forms) if f == "10-K"), None)
     if ten_k_idx is None:
-        return {"ticker": ticker, "error": "No 10-K filing found"}
+        fallback = {"ticker": ticker_clean, "note": "No 10-K filing found"}
+        _sec_cache[ticker_clean] = fallback
+        return fallback
 
     accession = accessions[ten_k_idx].replace("-", "")
     filing_date = dates[ten_k_idx]
@@ -71,25 +98,24 @@ def get_latest_10k_summary(ticker: str) -> dict:
     # Fetch the filing index
     index_url = f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{accession}/{accessions[ten_k_idx]}-index.htm"
     try:
-        resp = requests.get(index_url, headers=headers, timeout=15)
-        # Find the main 10-K document link
+        resp = requests.get(index_url, headers=headers, timeout=6)
         doc_match = re.search(r'href="(/Archives/edgar/data/[^"]+\.htm)"', resp.text)
         if not doc_match:
-            return {"ticker": ticker, "error": "Could not find 10-K document URL"}
+            return {"ticker": ticker_clean, "note": "10-K document link not found"}
         doc_url = "https://www.sec.gov" + doc_match.group(1)
     except Exception as e:
-        return {"ticker": ticker, "error": f"Failed to fetch filing index: {e}"}
+        return {"ticker": ticker_clean, "note": f"Index fetch failed: {e}"}
 
-    # Fetch the actual 10-K document
+    # Fetch the actual 10-K document (capped size)
     try:
-        resp = requests.get(doc_url, headers=headers, timeout=30)
-        text = re.sub(r"<[^>]+>", " ", resp.text)  # strip HTML tags
+        resp = requests.get(doc_url, headers=headers, timeout=8)
+        text = re.sub(r"<[^>]+>", " ", resp.text[:1_000_000])  # Cap at 1MB to avoid regex hang
         text = re.sub(r"\s+", " ", text).strip()
     except Exception as e:
-        return {"ticker": ticker, "error": f"Failed to fetch 10-K document: {e}"}
+        return {"ticker": ticker_clean, "note": f"10-K document fetch failed: {e}"}
 
-    return {
-        "ticker": ticker,
+    result = {
+        "ticker": ticker_clean,
         "filing_date": filing_date,
         "accession_number": accessions[ten_k_idx],
         "business_description": _extract_section(text, "Item 1", "Item 1A", max_chars=3000),
@@ -97,6 +123,17 @@ def get_latest_10k_summary(ticker: str) -> dict:
         "mda_highlights": _extract_section(text, "Item 7", "Item 7A", max_chars=3000),
         "source": doc_url,
     }
+
+    # Save to memory and disk cache
+    _sec_cache[ticker_clean] = result
+    try:
+        os.makedirs(cache_dir, exist_ok=True)
+        with open(cache_file, "w", encoding="utf-8") as f:
+            json.dump(result, f)
+    except Exception:
+        pass
+
+    return result
 
 
 def _extract_section(text: str, start_marker: str, end_marker: str, max_chars: int = 2000) -> str:

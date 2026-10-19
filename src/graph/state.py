@@ -23,6 +23,7 @@ class HedgeFundState(TypedDict):
     # --- Risk & decision ---
     risk_analysis: dict
     risk_flag: bool
+    risk_loops: int
     final_decision: dict
 
     # --- Reflection output ---

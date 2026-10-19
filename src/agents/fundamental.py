@@ -37,13 +37,19 @@ Output ONLY a JSON object matching this exact schema — no markdown, no explana
 }}"""
 
 
+from concurrent.futures import ThreadPoolExecutor
+
+
 def fundamental_node(state: HedgeFundState) -> dict:
     ticker = state["ticker"]
     beliefs = state.get("investment_beliefs", [])
 
-    # Fetch raw data
-    fundamentals = get_fundamentals(ticker)
-    sec_data = get_latest_10k_summary(ticker)
+    # Fetch raw data concurrently
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        f_future = executor.submit(get_fundamentals, ticker)
+        s_future = executor.submit(get_latest_10k_summary, ticker)
+        fundamentals = f_future.result()
+        sec_data = s_future.result()
 
     # Build belief injection string
     belief_context = ""

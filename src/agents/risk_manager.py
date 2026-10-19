@@ -92,11 +92,21 @@ Assess overall investment risk and determine if this decision should be flagged 
     ])
 
     raw = response.content.strip()
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    raw = raw.strip()
+    if "```" in raw:
+        # Extract content within code fences
+        parts = raw.split("```")
+        for part in parts[1:]:
+            cleaned = part.strip()
+            if cleaned.startswith("json"):
+                cleaned = cleaned[4:].strip()
+            if cleaned.startswith("{") and "}" in cleaned:
+                raw = cleaned
+                break
+
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start != -1 and end != -1:
+        raw = raw[start : end + 1]
 
     try:
         parsed = json.loads(raw)

@@ -66,6 +66,9 @@ def retrieve_similar(ticker: str, query: str, top_k: int = 5) -> list[dict]:
     Returns list of dicts with content + decay_score.
     """
     collection, embedder = _get_collection()
+    if collection.count() == 0:
+        return []
+
     query_text = f"{ticker} {query}"
     embedding = embedder.encode(query_text).tolist()
 
